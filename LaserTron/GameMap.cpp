@@ -5,12 +5,12 @@ GameMap::GameMap(const vector<Player*> &players)
 	Players = vector<Player*>(players.begin(), players.end());
 	for (auto it = Players.begin(); it != Players.end(); it++)
 	{
+		(*it)->Map = this;
 		BikeWall *wall = new BikeWall((*it)->Color);
 		int SpawnIdx = GetSpawnPointIdx();
-		Bike *bike = new Bike(wall, SpawnPoints[SpawnIdx], Bike::Base4Direction((SpawnIdx + 2) % 4), (*it)->Color);
-		(*it)->Turn = bike->Turn;
-		(*it)->Respawn = this->RespawnBike;
+		Bike *bike = new Bike(wall, SpawnPoints[SpawnIdx], Bike::Base4Direction((SpawnIdx + 1) % 4), (*it)->Color);
 		(*it)->BikeIdx = Bikes.size();
+		(*it)->bike = bike;
 		Walls.push_back(wall);
 		Bikes.push_back(bike);
 	}
@@ -28,7 +28,7 @@ void GameMap::CheckForCollision()
 		{
 			ofRectangle hitBox = Bikes[j]->getHitBox();
 			if (Walls[i]->Intersects(hitBox))
-				Bikes[j]->Kill();
+				KillBike(j);
 		}
 	}
 	for (int i = 0; i < Bikes.size(); i++)
@@ -39,14 +39,14 @@ void GameMap::CheckForCollision()
 			hitBox.intersects(ofVec2f(0, Size.y), ofVec2f(Size.x, Size.y)) ||
 			hitBox.intersects(ofVec2f(Size.x, 0), ofVec2f(Size.x, Size.y)))
 		{
-			Bikes[i]->Kill();
+			KillBike(i);
 		}
 		for (int j = i + 1; j < Bikes.size(); j++)
 		{
 			if (Bikes[j]->getHitBox().intersects(hitBox))
 			{
-				Bikes[j]->Kill();
-				Bikes[i]->Kill();
+				KillBike(i);
+				KillBike(j);
 			}
 		}
 	}
@@ -68,16 +68,17 @@ void GameMap::RespawnBike(int idx)
 {
 	int SpawnIdx = GetSpawnPointIdx();
 	Bikes[idx]->Respawn(SpawnPoints[SpawnIdx], Bike::Base4Direction((SpawnIdx + 1) % 4));
+	LiveBikes++;
 }
 
 int GameMap::GetSpawnPointIdx()
 {
-	if (Bikes.size() == 0)
-		return (int)(rand() * 3.999);
+	if (Bikes.size() == 0 || LiveBikes == 0)
+		return rand() % 4;
 	int furthestIdx = 0;
 	float biggestDst = 0;
 	float currentDst = 0;
-	for (int i = 1; i < 4; i++)
+	for (int i = 0; i < 4; i++)
 	{
 		currentDst = 0;
 		for (auto it = Bikes.begin(); it != Bikes.end(); it++)
@@ -91,4 +92,10 @@ int GameMap::GetSpawnPointIdx()
 		}
 	}
 	return furthestIdx;
+}
+
+void GameMap::KillBike(int idx)
+{
+	Bikes[idx]->Kill();
+	LiveBikes--;
 }

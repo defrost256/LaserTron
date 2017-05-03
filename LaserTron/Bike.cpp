@@ -18,7 +18,7 @@ void Bike::Update(ofxIlda::Frame* frame)
 {
 	Position += Speed * Direction;
 	Wall->ExtendLast(Position);
-	//frame->addPoly(Graphics.getTranslated(ofVec3f(Position)));
+	frame->addPoly(Graphics.getTranslated(ofVec3f(Position)));
 }
 
 void Bike::Turn(bool Left)
@@ -63,15 +63,19 @@ void Bike::SetDirection(Base4Direction d)
 	switch (d)
 	{
 	case Bike::Up:
+		ofLogNotice("Tron", "Turn UP");
 		Direction = ofVec2f(0, -1);
 		break;
 	case Bike::Down:
+		ofLogNotice("Tron", "Turn DOWN");
 		Direction = ofVec2f(0, 1);
 		break;
 	case Bike::Left:
+		ofLogNotice("Tron", "Turn LEFT");
 		Direction = ofVec2f(-1, 0);
 		break;
 	case Bike::Right:
+		ofLogNotice("Tron", "Turn RIGHT");
 		Direction = ofVec2f(1, 0);
 		break;
 	default:

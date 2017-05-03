@@ -2,11 +2,13 @@
 
 GameThread::GameThread(EtherDreamController * ed)
 {
-	ED = ed;
 	Player* p = new Player(ofColor::aliceBlue, "wasd ");
 	Players.push_back(p);
 	Map = new GameMap(Players);
+#ifdef LASER
+	ED = ed;
 	ED->Start();
+#endif
 	startThread();
 }
 
@@ -19,11 +21,14 @@ void GameThread::threadedFunction()
 	while (isThreadRunning())
 	{
 		lock();
+		frame.clear();
 		Map->Update(&frame);
 		Map->CheckForCollision();
 		ProcessInputs();
 		frame.update();
+#ifdef LASER
 		ED->AddPoints(frame);
+#endif
 		unlock();
 		ofSleepMillis(50);
 	}
@@ -38,9 +43,11 @@ void GameThread::QueueInput(int key)
 
 void GameThread::Draw()
 {
+#ifdef DRAW
 	lock();
 	frame.draw();
 	unlock();
+#endif
 }
 
 void GameThread::ProcessInputs()
@@ -51,10 +58,11 @@ void GameThread::ProcessInputs()
 		for (auto it = Players.begin(); it != Players.end(); it++)
 		{
 			int findIdx = (*it)->InputString.find((char)key);
-			if (findIdx < InputQueue.size())
+			if (findIdx != -1 && findIdx < (*it)->InputString.size())
 			{
-				(*it)->LastInput = findIdx;
+				(*it)->AddInput(findIdx);
 			}
 		}
+		InputQueue.pop();
 	}
 }

@@ -8,7 +8,7 @@ class Bike
 {
 public:
 
-	enum Base4Direction { Up, Left, Down, Right };
+	enum Base4Direction { Down, Right, Up, Left };
 
 public:
 	Bike(BikeWall* wall, ofVec2f startPos, Base4Direction startDir, ofColor color);
@@ -30,7 +30,7 @@ private:
 	ofVec2f Position;
 	ofVec2f Direction;
 	Base4Direction _Direction;
-	float Speed;
+	float Speed = 0.01;
 
 	ofxIlda::Poly Graphics;
 	ofxIlda::Poly TransformedGraphics;

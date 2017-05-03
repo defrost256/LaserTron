@@ -12,7 +12,7 @@ BikeWall::~BikeWall()
 
 void BikeWall::ExtendLast(ofVec2f point)
 {
-	Polys[PolyCount - 1][2].set(point);
+	Polys[PolyCount - 1][1].set(point);
 	Polys[PolyCount - 1].flagHasChanged();
 	bDrawLastPoly = true;
 }

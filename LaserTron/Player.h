@@ -2,10 +2,12 @@
 
 #include "ofColor.h"
 #include "ofThread.h"
+#include "GameMap.h"
+#include "Bike.h"
 
-typedef void InputCallback(int idx);
+class GameMap;
 
-class Player
+class Player : public ofThread
 {
 public:
 	Player(ofColor color, string intputString);
@@ -15,11 +17,15 @@ public:
 	ofColor Color;
 	int BikeIdx;
 	string InputString;
+	Bike* bike;
+
+	GameMap* Map;
+
+	void AddInput(int input);
+
+private:
 	int LastInput = -1;
 
-	InputCallback *Turn;
-	InputCallback *Respawn;
-
 	void ProcessInput();
+	void threadedFunction() override;
 };
-

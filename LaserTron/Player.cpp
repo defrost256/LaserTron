@@ -1,16 +1,16 @@
 #include "Player.h"
 
-Player::Player(ofColor color, string intputString)
+Player::Player(ofColor color, string inputString)
 {
 	Color = color;
-	InputString = InputString;
+	InputString = inputString;
+	startThread();
 }
 
 Player::Player(const Player & p)
 {
 	Color = p.Color;
-	Turn = p.Turn;
-	Respawn = p.Respawn;
+	bike = p.bike;
 	BikeIdx = p.BikeIdx;
 	InputString = p.InputString;
 }
@@ -19,14 +19,32 @@ Player::~Player()
 {
 }
 
+void Player::AddInput(int input)
+{
+	lock();
+	LastInput = input;
+	unlock();
+}
+
 void Player::ProcessInput()
 {
 	if (LastInput != -1)
 	{
 		if (LastInput < 4)
-			Turn(LastInput);
+			bike->TurnCallback(LastInput);
 		else
-			Respawn(BikeIdx);
+			Map->RespawnBike(BikeIdx);
 		LastInput = -1;
+	}
+}
+
+void Player::threadedFunction()
+{
+	while (isThreadRunning())
+	{
+		lock();
+		ProcessInput();
+		unlock();
+		ofSleepMillis(10);
 	}
 }

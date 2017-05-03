@@ -2,16 +2,20 @@
 
 //--------------------------------------------------------------
 void ofApp::setup(){
+#ifdef LASER
 	listener = new DacListener();
 	listener->startThread();
 	while (listener->GetDacCount() < 1)
 		ofSleepMillis(100);
 	DAC = listener->GetDac(0);
-	ED = new EtherDreamController(DAC, false);
+	ED = new EtherDreamController(DAC, true);
 	ED->SetPPS(30000);
 	ED->SetWaitBeforeSend(true);
 	ED->SetAutoConnect(true);
 	Game = new GameThread(ED);
+#else
+	Game = new GameThread(nullptr);
+#endif //LASER == 1
 }
 
 //--------------------------------------------------------------
@@ -21,8 +25,10 @@ void ofApp::update(){
 
 //--------------------------------------------------------------
 void ofApp::draw(){
+#ifdef DRAW
 	Game->Draw();
 	ofSleepMillis(20);
+#endif
 }
 
 //--------------------------------------------------------------
