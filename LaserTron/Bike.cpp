@@ -18,7 +18,7 @@ void Bike::Update(ofxIlda::Frame* frame)
 {
 	Position += Speed * Direction;
 	Wall->ExtendLast(Position);
-	frame->addPoly(Graphics.getTranslated(ofVec3f(Position)));
+	//frame->addPoly(Graphics.getTranslated(ofVec3f(Position)));
 }
 
 void Bike::Turn(bool Left)

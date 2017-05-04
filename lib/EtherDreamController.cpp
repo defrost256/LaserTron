@@ -12,7 +12,7 @@ EtherDreamController::EtherDreamController(EtherDream * device, bool StartThread
 	}
 
 	if (StartThread)
-		startThread(true, false);
+		startThread(false);
 }
 
 EtherDreamController::~EtherDreamController()
@@ -25,12 +25,14 @@ void EtherDreamController::threadedFunction()
 	{
 		if (isFound)
 		{
-			//ofLogNotice("Loop", "Aquiring lock");
-			lock();
-			//ofLogNotice("Loop", "Lock Aquired");
+			//ofLogNotice("Loop", "AQUIRING LOCK");
+			while (!lock())
+				ofSleepMillis(5);
+			//ofLogNotice("Loop", "LOCK AQUIRED");
 			Send();
 			unlock();
-			//ofLogNotice("Loop", "Unlocked");
+			//ofLogNotice("Loop", "UNLOCKED");
+			ofSleepMillis(7);
 		}
 		else
 		{
@@ -60,22 +62,22 @@ void EtherDreamController::Stop()
 
 void EtherDreamController::Send()
 {
-	//ofLogNotice("Send", "Start");
+	//ofLogNotice("Send", "START");
 	if (!isFound || points.empty())
 	{
-		//ofLogNotice("Send", "No points");
+		//ofLogNotice("Send", "NO POINTS");
 		return;
 	}
-	//ofLogNotice("Send", "Can Send");
+	//ofLogNotice("Send", "CAN SEND");
 	if (waitBeforeSend)
 	{
-		//ofLogNotice("Send", "Waiting for ready");
+		//ofLogNotice("Send", "WAITING FOR READY");
 		device->WaitForReady();
-		//ofLogNotice("Send", "Ready");
+		//ofLogNotice("Send", "READY");
 	}
 	else if (!device->IsReady())
 		return;
-	//ofLogNotice("Send", "Sending");
+	//ofLogNotice("Send", "SENDING");
 
 	//TODO: This cast might cause problems test for this in CTR
 	int res = device->Write((EtherDreamPoint*)points.data(), points.size(), pps, 1);
@@ -88,12 +90,13 @@ void EtherDreamController::AddPoints(const vector<ofxIlda::Point>& _points)
 {
 	if (_points.empty())
 		return;
-	//ofLogNotice("AddPoints", "Aquiring lock");
-	lock();
-	//ofLogNotice("AddPoints", "Lock Aquired");
+	ofLogNotice("AddPoints", "Aquiring lock");
+	while (!lock())
+		ofSleepMillis(21);
+	ofLogNotice("AddPoints", "Lock Aquired");
 	points.insert(points.end(), _points.begin(), _points.end());
 	unlock();
-	//ofLogNotice("AddPoints", "Unlocked");
+	ofLogNotice("AddPoints", "Unlocked");
 }
 
 void EtherDreamController::AddPoints(const ofxIlda::Frame & frame)
@@ -103,7 +106,8 @@ void EtherDreamController::AddPoints(const ofxIlda::Frame & frame)
 
 void EtherDreamController::SetWaitBeforeSend(bool wait)
 {
-	lock();
+	while (!lock())
+		ofSleepMillis(26);
 	waitBeforeSend = wait;
 	unlock();
 }
@@ -115,7 +119,8 @@ bool EtherDreamController::GetWaitBeforeSend()
 
 void EtherDreamController::SetAutoConnect(bool connect)
 {
-	lock();
+	while (!lock())
+		ofSleepMillis(26);
 	autoConnect = connect;
 	unlock();
 }
@@ -127,7 +132,8 @@ bool EtherDreamController::GetAutoConnect()
 
 void EtherDreamController::SetPPS(int _pps)
 {
-	lock();
+	while (!lock())
+		ofSleepMillis(26);
 	pps = _pps;
 	unlock();
 }

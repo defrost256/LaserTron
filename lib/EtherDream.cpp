@@ -15,6 +15,16 @@ EtherDream::~EtherDream()
 {
 }
 
+void EtherDream::LogEtherDream(const string & module, const char* format, ...)
+{
+	va_list args;
+	string time = ofGetTimestampString();
+	const string timedModule = time.append(module);
+	va_start(args, format);
+	ofLogNotice(timedModule, format, args);
+	va_end(args);
+}
+
 int EtherDream::Connect()
 {
 	frameBufferRead = 0;
@@ -34,12 +44,13 @@ int EtherDream::Connect()
 
 	startThread();
 
-	ofLogNotice("EtherDream", "Connected");
+	LogEtherDream("EtherDream", "Connected");
 	return 0;
 }
 
 void EtherDream::Disconnect()
 {
+	LogEtherDream("EtherDream", "Disconnecting");
 	lock();
 	if (state == ST_Ready)
 		cond.set();
@@ -105,23 +116,23 @@ bool EtherDream::IsReady()
 
 void EtherDream::WaitForReady()
 {
-	//ofLogNotice("WaitForReady", "Aquiring lock");
+	//LogEtherDream("WaitForReady", "AQUIRING LOCK");
 	lock();
-	//ofLogNotice("WaitForReady", "Lock aquired");
+	//LogEtherDream("WaitForReady", "LOCK AQUIRED");
 	while (frameBufferFullness == 2)
 	{
-		//ofLogNotice("WaitForReady", "Full buffer");
+		//LogEtherDream("WaitForReady", "FULL BUFFER");
 		unlock();
-		//ofLogNotice("WaitForReady", "Unlock");
-		//ofLogNotice("WaitForReady", "Waiting for condition");
+		//LogEtherDream("WaitForReady", "UNLOCK");
+		//LogEtherDream("WaitForReady", "WAITING FOR CONDITION");
 		cond.wait();
-		//ofLogNotice("WaitForReady", "Condition met");
-		//ofLogNotice("WaitForReady", "Aquiring lock");
+		//LogEtherDream("WaitForReady", "CONDITION MET");
+		//LogEtherDream("WaitForReady", "AQUIRING LOCK");
 		lock();
-		//ofLogNotice("WaitForReady", "Lock aquired");
+		//LogEtherDream("WaitForReady", "LOCK AQUIRED");
 	}
 	unlock();
-	//ofLogNotice("WaitForReady", "Unlock");
+	//LogEtherDream("WaitForReady", "UNLOCK");
 }
 
 void EtherDream::Stop()
@@ -228,7 +239,7 @@ int EtherDream::Connect_Inner()
 		Bail();
 		return -1;
 	}
-	
+	//LogEtherDream("READRESP", "CONNECTINNER_1");
 	if (ReadResponse() < 0)
 	{
 		ofLogError("EtherDream", "Failed to read response");
@@ -238,6 +249,7 @@ int EtherDream::Connect_Inner()
 
 	char c = 'p';
 	SendAll(&c, 1);
+	//LogEtherDream("READRESP", "CONNECTINNER_2");
 	if (ReadResponse() < 0)
 	{
 		ofLogError("EtherDream", "Failed to prepare ED");
@@ -262,7 +274,7 @@ int EtherDream::Connect_Inner()
 	else
 		strcpy(version, "[OLD]");
 
-	ofLogNotice("EtherDream", "Dac Connected version:  %.*s", sizeof(version), version);
+	LogEtherDream("EtherDream", "Dac Connected version:  %.*s", sizeof(version), version);
 	return 0;
 }
 
@@ -334,6 +346,7 @@ int EtherDream::ReadResponse()
 	int res = ReadBytes((char*)&conn.response, sizeof(conn.response));
 	if (res < 0)
 		return res;
+	LogEtherDream("EtherDreamDebug", "ReadResponse - PointCount : %d, BufferFullness : %d, PlaybackFlags : %x, Playback State: %d",conn.response.dac_status.point_count, conn.response.dac_status.buffer_fullness, conn.response.dac_status.playback_flags, conn.response.dac_status.playback_state);
 	if (conn.response.response != 'a')
 		ofLogError("EtherDream", "%c Not Acknowledged (%c)", conn.response.command, conn.response.response);
 	conn.lastAckTime = ofGetElapsedTimeMicros();
@@ -358,16 +371,23 @@ int EtherDream::WaitForActivity(int uSecTimeout, bool writable)
 	timeval t;
 	t.tv_sec = uSecTimeout / 1000000;
 	t.tv_usec = uSecTimeout % 1000000;
-	return select(conn.socket + 1, (writable ? nullptr : &set), (writable ? &set : nullptr), &set, &t);
+	LogEtherDream("WaitForActivity", "Start");
+	int res = select(conn.socket + 1, (writable ? nullptr : &set), (writable ? &set : nullptr), &set, (uSecTimeout == 0 ? nullptr : &t));
+	LogEtherDream("WaitForActivity_end", "End");
+	if (res < 0)
+		ofLogError("EtherDream", "WFA - Select failed");
+	return res;
 }
 
 int EtherDream::CheckDataResponse()
 {
+	//LogEtherDream("CheckDataResponse", "Start");
 	if (conn.response.dac_status.playback_state == 0)
 		conn.isBeginSent = 0;
-
+	//LogEtherDream("CheckDataResponse_Start", "AckBuffer: (%d, %d)", conn.ackBufferProduce, conn.ackBufferConsume);
 	if (conn.response.command == 'd')
 	{
+		//LogEtherDream("CheckDataResponse_D", "AckBuffer: (%d, %d)", conn.ackBufferProduce, conn.ackBufferConsume);
 		if (conn.ackBufferProduce == conn.ackBufferConsume)
 		{
 			ofLogError("EtherDream", "Unexpected data ack");
@@ -375,9 +395,13 @@ int EtherDream::CheckDataResponse()
 		}
 		conn.unAckPoints -= conn.ackBuffer[conn.ackBufferConsume];
 		conn.ackBufferConsume = (conn.ackBufferConsume + 1) % 64;
+		//LogEtherDream("CheckDataResponse_End", "AckBuffer: (%d, %d)", conn.ackBufferProduce, conn.ackBufferConsume);
 	}
 	else
+	{
+		//LogEtherDream("CheckDataResponse", "Consumed Ack for %c", conn.response.command);
 		conn.pendingMetaAcks--;
+	}
 
 	if (conn.response.response != 'a' && conn.response.response != 'I')
 	{
@@ -394,6 +418,7 @@ int EtherDream::GetAcks(int uSecTimeout)
 		int res = WaitForActivity(uSecTimeout, false);
 		if (res <= 0)
 			return res;
+		//LogEtherDream("READRESP", "GETACKS");
 		if ((res = ReadResponse()) < 0)
 			return res;
 		if ((res = CheckDataResponse()) < 0)
@@ -412,12 +437,17 @@ int EtherDream::SendData(dac_point * data, int nPoints, int rate)
 		char c = 'p';
 		if ((res = SendAll(&c, 1)) < 0)
 			return res;
+		//LogEtherDream("READRESP", "SENDDATA_P");
 		if ((res = ReadResponse()) < 0)
 			return res;
 		conn.pendingMetaAcks++;
 
 		while (conn.pendingMetaAcks)
-			GetAcks(1500);
+		{
+			//LogEtherDream("SendData_GETMETAACK", "(%d)", conn.pendingMetaAcks);
+			int tmpResp = GetAcks(1500);
+			//LogEtherDream("SendData_GETMETAACK", "R:%d", tmpResp);
+		}
 
 	}
 
@@ -430,6 +460,7 @@ int EtherDream::SendData(dac_point * data, int nPoints, int rate)
 
 		if ((res = SendAll((char*)&b, sizeof(b))) < 0)
 			return res;
+		LogEtherDream("READRESP", "SENDDATA_B");
 		if ((res = ReadResponse()) < 0)
 			return res;
 
@@ -437,6 +468,7 @@ int EtherDream::SendData(dac_point * data, int nPoints, int rate)
 		conn.pendingMetaAcks++;
 	}
 
+	LogEtherDream("SendData_GETACK", "Ack");
 	if ((res = GetAcks(0)) < 0)
 		return res;
 	if (nPoints <= 0)
@@ -465,19 +497,22 @@ int EtherDream::SendData(dac_point * data, int nPoints, int rate)
 void EtherDream::Loop()
 {
 	int res = 0;
-
+	//LogEtherDream("EtherDream_Loop", "Aquiring lock (start)");
 	lock();
-
+	//LogEtherDream("EtherDream_Loop", "Lock aquired (start)");
 	while (true)
 	{
 		int state;
+		//LogEtherDream("EtherDream_Loop", "Waiting for Ready");
 		while ((state = this->state) == ST_Ready)
 		{
 			unlock();
 			cond.wait();
 			lock();
 		}
+		//LogEtherDream("EtherDream_Loop", "Ready");
 		unlock();
+		//LogEtherDream("EtherDream_Loop", "Unlocked");
 
 		if (state != ST_Running)
 			break;
@@ -485,7 +520,7 @@ void EtherDream::Loop()
 		BufferItem* b = &buffer[frameBufferRead];
 		int cap;
 		int expextedFullness, expectedUsed;
-
+		//LogEtherDream("EtherDream_Loop", "Computing Buffer");
 		while (true)
 		{
 			res = 0;
@@ -511,8 +546,15 @@ void EtherDream::Loop()
 
 			sleep(waitTime / 1000);
 			if ((res = GetAcks(0)) < 0)
+			{
+				//LogEtherDream("Loop_Getack", "Result:%d", res);
 				break;
+			}
+			//else
+				//LogEtherDream("Loop_Getack", "Result:%d", res);
+
 		}
+		//LogEtherDream("EtherDream_Loop", "Buffer computed with %d", res);
 		if (res < 0)
 			break;
 
@@ -523,16 +565,19 @@ void EtherDream::Loop()
 		// TODO: Is this neccessary?
 		if (cap > 80)
 			cap = 80;
-
+		//LogEtherDream("EtherDream_Loop", "Sending Data");
 		res = SendData(b->data + b->idx, cap, b->pps);
+		//LogEtherDream("EtherDream_Loop", "Data Sent (%d)", res);
 		if (res < 0)
 			break;
 
+		//LogEtherDream("EtherDream_Loop", "Aquiring lock (Loop)");
 		lock();
-
+		//LogEtherDream("EtherDream_Loop", "Lock Aquired (Loop)");
 		b->idx += cap;
 		if (b->idx < b->points)
 			continue;
+		//LogEtherDream("EtherDream_Loop", "Swapping buffer");
 		b->idx = 0;
 
 		if (b->repeatCount > 1)
@@ -542,6 +587,7 @@ void EtherDream::Loop()
 			frameBufferRead++;
 			if (frameBufferRead >= 2)
 				frameBufferRead = 0;
+			//LogEtherDream("EtherDream_Loop", "Setting wait cond");
 			cond.set();
 		}
 		else if (b->repeatCount >= 0)
@@ -581,7 +627,7 @@ void DacListener::threadedFunction()
 		ofLogError("EtherDream", "Bind failed");
 		return;
 	}
-	ofLogNotice("EtherDream", "Listening for DACs");
+	EtherDream::LogEtherDream("EtherDream", "Listening for DACs");
 
 	while (1)
 	{
@@ -621,7 +667,7 @@ void DacListener::threadedFunction()
 
 		dacCount++;
 
-		ofLogNotice("EtherDream", "Found new Dac @ %s", inet_ntoa(src.sin_addr));
+		EtherDream::LogEtherDream("EtherDream", "Found new Dac @ %s", inet_ntoa(src.sin_addr));
 
 		lock();
 		newDac->SetNext(dacList);
@@ -629,7 +675,7 @@ void DacListener::threadedFunction()
 		unlock();
 	}
 
-	ofLogNotice("EtherDream", "Exiting");
+	EtherDream::LogEtherDream("EtherDream", "Exiting");
 }
 
 int DacListener::GetDacCount()

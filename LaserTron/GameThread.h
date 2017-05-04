@@ -21,6 +21,8 @@ public:
 
 private:
 
+	long Tick = 0;
+
 	ofxIlda::Frame frame;
 	queue<int> InputQueue;
 	EtherDreamController* ED;

@@ -105,6 +105,8 @@ public:
 	void WaitForReady();
 	void Stop();
 
+	static void LogEtherDream(const string & module, const char* format, ...);
+
 	in_addr GetAddress();
 	unsigned long GetAddressL();
 	EtherDream* GetNextC();

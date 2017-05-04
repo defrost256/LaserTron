@@ -20,16 +20,24 @@ void GameThread::threadedFunction()
 {
 	while (isThreadRunning())
 	{
+		ofLogNotice("Tron - GameThread", "Frame %d start", Tick);
 		lock();
 		frame.clear();
+		ofLogNotice("Tron - GameThread", "Clear Frame");
 		Map->Update(&frame);
+		ofLogNotice("Tron - GameThread", "Check collide");
 		Map->CheckForCollision();
+		ofLogNotice("Tron - GameThread", "Process input");
 		ProcessInputs();
+		ofLogNotice("Tron - GameThread", "Update frame");
 		frame.update();
 #ifdef LASER
+		ofLogNotice("Tron - GameThread", "Send Points");
 		ED->AddPoints(frame);
 #endif
 		unlock();
+		ofLogNotice("Tron - GameThread", "Frame %d end", Tick);
+		Tick++;
 		ofSleepMillis(50);
 	}
 }
