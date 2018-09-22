@@ -1,0 +1,5 @@
+<map id="Player" name="Player">
+<area shape="rect" id="node3" href="$d4/de2/class_game_map.html" title="GameMap" alt="" coords="101,95,183,121"/>
+<area shape="rect" id="node4" href="$d2/d3d/class_bike.html" title="Bike" alt="" coords="207,95,255,121"/>
+<area shape="rect" id="node5" href="$d1/d06/class_bike_wall.html" title="BikeWall" alt="" coords="194,5,269,32"/>
+</map>
