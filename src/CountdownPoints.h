@@ -4,6 +4,10 @@
 #include "ofPoint.h"
 #include "ofxIldaPoly.h"
 
+/**
+ * Points calculated manually to represent numbers from 1-3 and the letters G, O
+ * Used for displaying them with a laser projector
+ */
 class CountdownPoints
 {
 public:

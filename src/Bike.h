@@ -43,12 +43,14 @@ public:
 
 #ifdef PI
 	/**
+	 * __PI__
 	 * Turns the bike to the left or right based on param.
 	 * @param left If true, the bike turns to the left, otherwise to the right.
 	 */
 	void TurnCallback(bool left);
 #else
 	/**
+	 * __WIN__
 	 * Turns the bike to the specified direction.
 	 * @param idx The direction of the bike (0-3: Up, Left, Down, Right)
 	 */

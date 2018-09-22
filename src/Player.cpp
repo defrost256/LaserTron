@@ -6,9 +6,9 @@ Player::Player(ofColor color, int leftPin, int rightPin)
 	Color = color;
 	LeftPin = leftPin;
 	RightPin = rightPin;
-	WiringPi::pinMode(leftPin, WiringPi::INPUT);
+	WiringPi::pinMode(leftPin, WiringPi::INPUT);	//Set up pinModes
 	WiringPi::pinMode(rightPin, WiringPi::INPUT);
-//	startThread();
+//	startThread();									//We start the playerThread from GameThread
 }
 #else
 Player::Player(ofColor color, string inputString)
@@ -40,14 +40,14 @@ Player::~Player()
 void Player::ExecuteInput()
 {
 	lock();
-	if(hasInput)
+	if(hasInput)																//if there is new input
 	{
 		ofLogNotice("Player", "EXECUTE %s", ofGetTimestampString().c_str());
-		if(leftLast)
+		if(leftLast)															//check left or right
 			bike->TurnCallback(true);
 		else if(rightLast)
 			bike->TurnCallback(false);
-		hasInput = false;
+		hasInput = false;				//input was processed
 	}
 	unlock();
 }
@@ -64,7 +64,7 @@ void Player::ProcessInput()
 {
 #ifdef PI
 	bool leftCurrent, rightCurrent;
-	leftCurrent = (WiringPi::digitalRead(LeftPin) == WiringPi::HIGH);
+	leftCurrent = (WiringPi::digitalRead(LeftPin) == WiringPi::HIGH);			//Check pins
 	rightCurrent = (WiringPi::digitalRead(RightPin) == WiringPi::HIGH);
 	//ofLogNotice("Player", "%d (%d) <-> %d (%d)", leftCurrent, leftLast, rightCurrent, rightLast);
 	//if(leftCurrent != leftLast && rightCurrent != rightLast && leftCurrent && rightCurrent)
@@ -73,12 +73,12 @@ void Player::ProcessInput()
 	//	rightLast = rightCurrent;
 	//	Map->RespawnBike(BikeIdx);
 	//}
-	/*else*/ if(leftCurrent != leftLast)
+	/*else*/ if(leftCurrent != leftLast)	//if there was change
 	{
-		if(leftCurrent)
+		if(leftCurrent)			//and the button is pressed
 		{
 			ofLogNotice("Player", "TURN LEFT %s", ofGetTimestampString().c_str());
-			hasInput = true;
+			hasInput = true;	//set input state
 		}
 		leftLast = leftCurrent;
 	}
@@ -92,13 +92,13 @@ void Player::ProcessInput()
 		rightLast = rightCurrent;
 	}
 #else
-	if (LastInput != -1)
+	if (LastInput != -1) //if there was input
 	{
-		if (LastInput < 4)
-			bike->TurnCallback(LastInput);
+		if (LastInput < 4)	//and it's a direction
+			bike->TurnCallback(LastInput);	//turn the bike
 		else
-			Map->RespawnBike(BikeIdx);
-		LastInput = -1;
+			Map->RespawnBike(BikeIdx);	//if it's respawn, respawn
+		LastInput = -1;		//input was processed
 	}
 #endif
 }
@@ -108,8 +108,8 @@ void Player::threadedFunction()
 	while (isThreadRunning())
 	{
 		lock();
-		ProcessInput();
+		ProcessInput();		//process input
 		unlock();
-		ofSleepMillis(50);
+		ofSleepMillis(50);	//wait
 	}
 }
