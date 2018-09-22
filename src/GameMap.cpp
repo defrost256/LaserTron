@@ -3,13 +3,13 @@
 GameMap::GameMap(const vector<Player*> &players)
 {
 	Players = vector<Player*>(players.begin(), players.end());
-	for (auto it = Players.begin(); it != Players.end(); it++)
+	for (auto it = Players.begin(); it != Players.end(); it++)		//For each player
 	{
-		(*it)->Map = this;
-		BikeWall *wall = new BikeWall((*it)->Color);
-		wall->BikeIdx = Bikes.size();
-		int SpawnIdx = GetSpawnPointIdx();
-		Bike *bike = new Bike(wall, SpawnPoints[SpawnIdx], Bike::Base4Direction((SpawnIdx + 1) % 4), (*it)->Color);
+		(*it)->Map = this;											//assign this map
+		BikeWall *wall = new BikeWall((*it)->Color);				//create a wall
+		int SpawnIdx = GetSpawnPointIdx();							//get a spawn point
+		Bike *bike = new Bike(wall, SpawnPoints[SpawnIdx], Bike::Base4Direction((SpawnIdx + 1) % 4), (*it)->Color);		//Create a bike
+		wall->BikeIdx = Bikes.size();								//assign bike to player and wall
 		(*it)->BikeIdx = Bikes.size();
 		(*it)->bike = bike;
 		Walls.push_back(wall);
@@ -21,9 +21,9 @@ GameMap::~GameMap()
 {
 }
 
-int GameMap::CheckForCollision()
+int GameMap::CheckForCollision()							///todo refactor loops
 {
-	for (int i = 0; i < Walls.size(); i++)
+	for (int i = 0; i < Walls.size(); i++)					//check bike-wall collisions
 	{
 		for (int j = 0; j < Bikes.size(); j++)
 		{
@@ -34,7 +34,7 @@ int GameMap::CheckForCollision()
 			}
 		}
 	}
-	for (int i = 0; i < Bikes.size(); i++)
+	for (int i = 0; i < Bikes.size(); i++)					//check bike-mapBounds collisions
 	{
 		ofRectangle hitBox = Bikes[i]->getHitBox();
 		if (hitBox.intersects(ofVec2f(0, 0), ofVec2f(0, 1)) ||
@@ -44,7 +44,7 @@ int GameMap::CheckForCollision()
 		{
 			KillBike(i);
 		}
-		for (int j = i + 1; j < Bikes.size(); j++)
+		for (int j = i + 1; j < Bikes.size(); j++)			//check bike-bike collisions
 		{
 			if (Bikes[j]->getHitBox().intersects(hitBox))
 			{
@@ -58,11 +58,11 @@ int GameMap::CheckForCollision()
 
 void GameMap::Update(ofxIlda::Frame * frame, float soundShift)
 {
-	for (int i = 0; i < Bikes.size(); i++)
+	for (int i = 0; i < Bikes.size(); i++)	//Update bikes
 	{
 		Bikes[i]->Update(frame);
 	}
-	for (int i = 0; i < Walls.size(); i++)
+	for (int i = 0; i < Walls.size(); i++)	//Update walls
 	{
 		Walls[i]->Update(frame, soundShift);
 	}
@@ -70,8 +70,8 @@ void GameMap::Update(ofxIlda::Frame * frame, float soundShift)
 
 void GameMap::RespawnBike(int idx)
 {
-	int SpawnIdx = GetSpawnPointIdx();
-	Bikes[idx]->Respawn(SpawnPoints[SpawnIdx], Bike::Base4Direction((SpawnIdx + 1) % 4));
+	int SpawnIdx = GetSpawnPointIdx();		//Get spawn point
+	Bikes[idx]->Respawn(SpawnPoints[SpawnIdx], Bike::Base4Direction((SpawnIdx + 1) % 4));	//respawn bike
 	LiveBikes++;
 }
 
@@ -79,19 +79,19 @@ void GameMap::Reset()
 {
 	for(int i = 0; i < Bikes.size(); i++)
 	{
-		Bikes[i]->Kill();
+		Bikes[i]->Kill();	//Kill bikes (only dead bikes can respawn)
 		int SpawnIdx = GetSpawnPointIdx();
 		Bikes[i]->Respawn(SpawnPoints[SpawnIdx], Bike::Base4Direction((SpawnIdx + 1) % 4));
 	}
 }
 int GameMap::GetSpawnPointIdx()
 {
-	if (Bikes.size() == 0 || LiveBikes == 0)
-		return rand() % 4;
+	if (Bikes.size() == 0 || LiveBikes == 0)	//if this is the first bike
+		return rand() % 4;						//choose at random
 	int furthestIdx = 0;
 	float biggestDst = 0;
 	float currentDst = 0;
-	for (int i = 0; i < 4; i++)
+	for (int i = 0; i < 4; i++)					//check which point is furthest from all the bikes (accumulated distance)
 	{
 		currentDst = 0;
 		for (auto it = Bikes.begin(); it != Bikes.end(); it++)
