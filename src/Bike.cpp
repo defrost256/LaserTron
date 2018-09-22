@@ -14,9 +14,9 @@ void Bike::Update(ofxIlda::Frame* frame)
 {
 	if (!alive)
 		return;
-	Position += Speed * Direction;
-	Wall->ExtendLast(Position);
-	Hitbox.setFromCenter(Position + Direction * Speed * 2, Speed, Speed);
+	Position += Speed * Direction;		//Update position
+	Wall->ExtendLast(Position);			//Extend last wall segment
+	Hitbox.setFromCenter(Position + Direction * Speed * 2, Speed, Speed);	//Update hitbox (to be in front of the bike)
 }
 
 void Bike::Spawn(ofVec2f startPos, Base4Direction startDir)
@@ -26,7 +26,7 @@ void Bike::Spawn(ofVec2f startPos, Base4Direction startDir)
 	Wall->Clear();
 	Position = startPos;
 	SetDirection(startDir);
-	Wall->AddNewLine(startPos);
+	Wall->AddNewLine(startPos);			//We need two new points to have a line to start with.
 	Wall->AddNewLine(startPos);
 	Hitbox.setFromCenter(Position + Direction * Speed * 2, Speed, Speed);
 	alive = true;
@@ -35,8 +35,8 @@ void Bike::Spawn(ofVec2f startPos, Base4Direction startDir)
 void Bike::Turn(bool Left)
 {
 	ofLogNotice("Bike", "Turn %s", ofGetTimestampString().c_str());
-	SetDirection(Base4Direction(((int)_Direction + (Left ? 1 : 3)) % 4));
-	Wall->AddNewLine(Position);
+	SetDirection(Base4Direction(((int)_Direction + (Left ? 1 : 3)) % 4));		//This is some math magic you need to trust
+	Wall->AddNewLine(Position);													//On turns we need a new line to drag with the bike, we leave the previous one behind (hence the corner)
 }
 
 void Bike::Respawn(ofVec2f startPos, Base4Direction startDir)
@@ -54,7 +54,7 @@ void Bike::TurnCallback(bool left)
 #else
 void Bike::TurnCallback(int idx)
 {
-	if (((int)_Direction - idx) % 2 != 0 && alive)
+	if (((int)_Direction - idx) % 2 != 0 && alive)		//Some more magic (but trust me it works)
 	{
 		Turn(_Direction == Base4Direction(idx + 1) % 4);
 	}
@@ -73,11 +73,11 @@ ofRectangle Bike::getHitBox()
 
 void Bike::Kill()
 {
-	if(!alive)
+	if(!alive)		//You can't kill what's already dead
 		return;
 	Wall->Clear();
 	alive = false;
-	Hitbox = ofRectangle(-1, -1, 0, 0);
+	Hitbox = ofRectangle(-1, -1, 0, 0);		//We just push it out of bounds
 }
 
 void Bike::SetDirection(Base4Direction d)
