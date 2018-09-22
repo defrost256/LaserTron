@@ -2,8 +2,8 @@
 
 GameThread::GameThread(ofxEtherdream * ed)
 {
-/*#ifdef PI
-	Player* p = new Player(ofColor::green, 2, 3);
+#ifdef PI												//This is the real game logic
+	Player* p = new Player(ofColor::green, 2, 3);		//create players
 	Players.push_back(p);
 	p = new Player(ofColor::red, 4, 14);
 	Players.push_back(p);
@@ -11,26 +11,26 @@ GameThread::GameThread(ofxEtherdream * ed)
 	Player* p = new Player(ofColor::green, "wasd ");
 	Players.push_back(p);
 #endif
-	Map = new GameMap(Players);
-	*/for (int i = 0; i < frameBufferSize; i++)
+	Map = new GameMap(Players);							//create map (comment to here for DEBUG)
+	for (int i = 0; i < frameBufferSize; i++)			//Create frame buffer
 	{
 		frames.push_back(ofxIlda::Frame());
 #ifdef LASER
-		frames[i].params.output.transform.doFlipX = true;
+		frames[i].params.output.transform.doFlipX = true;	//For laser we need to flip the axes
 		frames[i].params.output.transform.doFlipY = true;
 #endif
-	}/*
-	state = GT_Countdown;
-	countdown = 3;
-	*/
+	}
+	state = GT_Countdown;								//this is the real game logic
+	countdown = 3;										//initialize game state (comment to here for DEBUG)
+
 #ifdef LASER
-	ED = ed;
+	ED = ed;											//initialize ether dream
 	ED->setup(false, 0);
-	ofSleepMillis(1000);
-	ED->start();
+	ofSleepMillis(1000);								//wait for a second so it's ready for sure
+	ED->start();										//start it
 #endif
 
-	startThread();
+	startThread();										//start the main loop
 }
 
 GameThread::~GameThread()
@@ -42,67 +42,67 @@ void GameThread::threadedFunction()
 
 	while (isThreadRunning())
 	{
-	/*	switch(state)
+		switch(state)									//this is the real game logic
 		{
-		case GameThread::GT_Stopped:
-			ofSleepMillis(100);
+		case GameThread::GT_Stopped:					//if stopped
+			ofSleepMillis(100);							//just check back periodically
 			break;
-		case GameThread::GT_Running:
-			Update();
+		case GameThread::GT_Running:					//if running
+			Update();									//update frequently
 			ofSleepMillis(15);
 			break;
-		case GameThread::GT_Countdown:
-			Countdown();
+		case GameThread::GT_Countdown:					//if countdown
+			Countdown();								//just start the countdown, and wait
 			break;
-		}*/
-		frames[writeBufferIdx].clear();
+		}												//comment to here for DEBUG
+		/*frames[writeBufferIdx].clear();					//This is debug code
 		frames[writeBufferIdx].drawCalibration();
 		frames[writeBufferIdx].update();
 		lock();
 		writeBufferIdx = (writeBufferIdx + 1) % frameBufferSize;
 		readBufferIdx = (readBufferIdx + 1) % frameBufferSize;
 		unlock();
-		ofSleepMillis(10);
+		ofSleepMillis(10);*/								//DEBUG to here
 	}
 }
 
 void GameThread::Update()
 {
-	frames[writeBufferIdx].clear();
-	lock();
-	int bikes = Map->CheckForCollision();
+	frames[writeBufferIdx].clear();			//clear the frame we write to
+	lock();									//thread safe
+	int bikes = Map->CheckForCollision();	//check collision
 #ifdef PI
-	for(int i = 0; i < Players.size(); i++)
+	for(int i = 0; i < Players.size(); i++)	//Check GPIO input
 		Players[i]->ExecuteInput();
 #else
-	ProcessInputs();
+	ProcessInputs();						//process keyboard events
 #endif
-	unlock();
-	Map->Update(&frames[writeBufferIdx], Sound.GetData());
-	frames[writeBufferIdx].addPoly(ofPolyline::fromRectangle(ofRectangle(0, 0, 1, 1)), ofColor::blue);
-	frames[writeBufferIdx].setPolyProcessorTarget(bikes <= 0 ? targetPoints : targetPoints / (bikes + 1));
-	frames[writeBufferIdx].update();
+	unlock();								//no need for thread safety (we use double buffering)
+	Map->Update(&frames[writeBufferIdx], Sound.GetData());														//Update map
+	frames[writeBufferIdx].addPoly(ofPolyline::fromRectangle(ofRectangle(0, 0, 1, 1)), ofColor::blue);			//Draw map border
+	frames[writeBufferIdx].setPolyProcessorTarget(bikes <= 0 ? targetPoints : targetPoints / (bikes + 1));		//Optimize point count
+	frames[writeBufferIdx].update();																			//finalize frame
 	Tick++;
 	lock();
-	readBufferIdx = (readBufferIdx + 1) % frameBufferSize;
+	readBufferIdx = (readBufferIdx + 1) % frameBufferSize;														//swap buffers
 	writeBufferIdx = (writeBufferIdx + 1) % frameBufferSize;
 	unlock();
 }
 
 void GameThread::Countdown()
 {
-	frames[writeBufferIdx].setPolyProcessorTarget(targetPoints);
-	DrawFont(countdown > 0 ? countdown + '0' : 'G');
-	ofSleepMillis(900);
-	if(countdown == 0)
-		state = GT_Running;
+	frames[writeBufferIdx].setPolyProcessorTarget(targetPoints);	//optimize points
+	DrawFont(countdown > 0 ? countdown + '0' : 'G');				//Draw countdown
+	ofSleepMillis(900);												//wait a second
+	if(countdown == 0)												//if countdown finished
+		state = GT_Running;											//play the game
 	countdown--;
 }
 
 void GameThread::DrawFont(char c)
 {
-	frames[writeBufferIdx].clear();
-	switch(c)
+	frames[writeBufferIdx].clear();						//clear frame we write to
+	switch(c)											//draw the number
 	{
 	case '1':
 		frames[writeBufferIdx].addPoly(cdp.pFont_1_0);
@@ -123,9 +123,9 @@ void GameThread::DrawFont(char c)
 		frames[writeBufferIdx].addPoly(cdp.pFont_O_1);
 		break;
 	}
-	frames[writeBufferIdx].update();
+	frames[writeBufferIdx].update();					//finalize the frame
 	lock();
-	readBufferIdx = (readBufferIdx + 1) % frameBufferSize;
+	readBufferIdx = (readBufferIdx + 1) % frameBufferSize;		//swap buffers
 	writeBufferIdx = (writeBufferIdx + 1) % frameBufferSize;
 	unlock();
 }
@@ -134,12 +134,12 @@ void GameThread::SendData()
 {
 #ifdef LASER
 	lock();
-	if (readBufferIdx < 0)
+	if (readBufferIdx < 0)	//the readbuffer is uninitialized before the first frame
 	{
 		unlock();
 		return;
 	}
-	ED->addPoints(frames[readBufferIdx]);
+	ED->addPoints(frames[readBufferIdx]);	//Send those frames
 	unlock();
 #endif // LASER
 }
@@ -169,17 +169,17 @@ void GameThread::Draw()
 
 void GameThread::Restart()
 {
-	waitForThread();
-	ED->stop();
+	waitForThread();			//stop game loop
+	ED->stop();					//stop etherdream
 #ifndef PI
-	while(!InputQueue.empty())
+	while(!InputQueue.empty())	//empty input queue
 		InputQueue.pop();
 #endif
-	state = GT_Countdown;
+	state = GT_Countdown;		//initialize countdown
 	countdown = 3;
-	Map->Reset();
-	ED->start();
-	startThread();
+	Map->Reset();				//reset the map
+	ED->start();				//start etherdream
+	startThread();				//start game loop
 }
 
 #ifndef PI
@@ -188,17 +188,17 @@ void GameThread::ProcessInputs()
 	while (!InputQueue.empty())
 	{
 		bool found = false;
-		int key = InputQueue.front();
-		for (auto it = Players.begin(); it != Players.end() && !found; it++)
+		int key = InputQueue.front();												//get the next key in queue
+		for (auto it = Players.begin(); it != Players.end() && !found; it++)		//find the player which has that key as input
 		{
 			int findIdx = (*it)->InputString.find((char)key);
 			if (findIdx != -1 && findIdx < (*it)->InputString.size())
 			{
-				(*it)->AddInput(findIdx);
+				(*it)->AddInput(findIdx);											//add the input
 				found = true;
 			}
 		}
-		InputQueue.pop();
+		InputQueue.pop();															//remove from queue
 	}
 }
 #endif

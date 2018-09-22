@@ -10,14 +10,14 @@ void ofApp::setup(){
 	Game = new GameThread(nullptr);
 #endif //LASER == 1
 #ifdef PI
-//	WiringPi::pinMode(restartPin, WiringPi::INPUT);
+	WiringPi::pinMode(restartPin, WiringPi::INPUT);
 #endif
 }
 
 //--------------------------------------------------------------
 void ofApp::update(){
 #ifdef PI
-	/*bool restart = (WiringPi::digitalRead(restartPin) == WiringPi::HIGH);
+	bool restart = (WiringPi::digitalRead(restartPin) == WiringPi::HIGH);
 	if(restart != lastRestart)
 	{
 		ofLogNotice() << "Restart change " << restart;
@@ -25,7 +25,7 @@ void ofApp::update(){
 			Game->Restart();
 		lastRestart = restart;
 	}
-	ofSleepMillis(10);*/
+	ofSleepMillis(10);
 #endif
 
 }

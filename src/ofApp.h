@@ -7,7 +7,9 @@
 #endif
 
 class ofxEtherdream;
-
+/**
+ * We use this to interface with ofx, and to create the GameThread and the Etherdream
+ */
 class ofApp : public ofBaseApp{
 	public:
 		void setup();
